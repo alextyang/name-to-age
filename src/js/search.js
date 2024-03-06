@@ -1,45 +1,139 @@
 
-const resultDiv = document.getElementById('result');
-
+const resultEl = document.getElementById('age');
+const suggestionDiv = document.getElementById('suggestions');
 const searchEl = document.getElementById('input-name');
+
+var nameList = await fetchListOfNames();
+
+
+
+for (const [key, value] of new URLSearchParams(window.location.search).entries()) {
+    if (value && value.length > 0) {
+        searchEl.value = value;
+        searchName(value);
+    }
+}
+
+
 searchEl.addEventListener("keyup", ({ key }) => {
+    const value = searchEl.value;
     if (key === "Enter")
-        searchName(searchEl.value);
-    else
-        suggestNames(searchEl.value);
-})
+        searchName(value);
+});
+
+searchEl.addEventListener("input", (ev) => {
+    const value = searchEl.value;
+    clearSuggestions();
+    suggestNames(value);
+});
+
+
+async function suggestNames(value) {
+    value = sanitizeName(value);
+
+    if (value.length < 2)
+        return [];
+
+    const suggestions = [];
+
+    var index = 0;
+    while (index < nameList.length) {
+        if (nameList[index].indexOf(value) == 0 && nameList[index] != value)
+            suggestions.push(nameList[index]);
+        index++;
+    }
+
+    suggestions.sort((a, b) => {
+        return a.length - b.length;
+    });
+
+    renderSuggestions(suggestions.slice(0, 5));
+}
+
+function acceptSuggestion(ev) {
+    searchEl.value = ev.target.textContent;
+    clearSuggestions();
+    searchName(searchEl.value);
+}
+
+function clearSuggestions() {
+    suggestionDiv.innerHTML = '';
+}
+
+function renderSuggestions(suggestions) {
+    suggestions.forEach((suggestion) => {
+        const p = document.createElement("p");
+        p.appendChild(document.createTextNode(suggestion));
+        p.addEventListener("click", acceptSuggestion);
+        suggestionDiv.appendChild(p);
+    })
+}
+
 
 function searchName(name) {
+    name = sanitizeName(name);
+
     isValidName(name).then((isValid) => {
         if (!isValid)
-            console.log("[Info] Not a known name.");
-        console.log("[Info] Searching for " + name + ".");
+            return console.log("\n\n[Info] Not a known name.");
+        console.log("\n\n[Info] Searching for " + name + ".");
 
         fetchNameData(name).then((nameData) => {
-            resultDiv.textContent = yearToAge(calculateMode(nameData));
+            console.log("[Info] Frequency data: " + Object.keys(nameData).length + " entries.");
+            resultEl.textContent = yearToAge(calculateMode(nameData));
         });
+        searchEl.blur();
+        saveQuery(name);
     });
+}
+
+function saveQuery(name) {
+    const url = new URL(window.location.href);
+    url.searchParams.set('q', encodeURIComponent(name));
+    window.history.pushState(null, '', url);
+    console.log(url.toString());
 }
 
 function yearToAge(year) {
     const date = new Date();
     const currentYear = date.getFullYear() - (date.getMonth() < 6 ? 1 : 0);
+    console.log("[Info] Age: " + (currentYear - year) + ".  ( " + (date.getMonth() < 6 ? ("Assumes later bday") : ("Assumes earlier bday")) + " )");
 
     return currentYear - year;
 }
 
-function calculateMode(nameData) {
-    var maxYear, maxFreq = 0;
-    Object.keys(nameData).forEach((year) => {
-        if (maxFreq < nameData[year])
-            maxYear = year;
-    });
-
-    return maxYear || -1;
+function sanitizeName(value) {
+    const trimmedStr = decodeURIComponent(value).trim();
+    return trimmedStr.substring(0, 1).toUpperCase() + trimmedStr.substring(1).toLowerCase();
 }
 
-function suggestNames(value) {
+function calculateMode(nameData) {
+    var maxYear = 0, maxFreq = 0, modeCount = 0;
+    Object.keys(nameData).forEach((year) => {
+        if (maxFreq < nameData[year])
+            maxFreq = nameData[year];
+    });
 
+    Object.keys(nameData).forEach((year) => {
+        if (maxFreq == nameData[year]) {
+            maxYear += Number(year);
+            modeCount++;
+        }
+    });
+
+    console.log("[Info] Year: " + Math.round(maxYear / modeCount) + ".  ( " + modeCount + " points )");
+
+    return Math.round(maxYear / modeCount);
+}
+
+function calculateMean(nameData) {
+    var weightedAvgAge = 0, sum = 0;
+    Object.keys(nameData).forEach((year) => {
+        weightedAvgAge += year * nameData[year];
+        sum += nameData[year];
+    });
+
+    return Math.round(weightedAvgAge / sum);
 }
 
 async function fetchNameData(name) {
@@ -49,7 +143,6 @@ async function fetchNameData(name) {
 }
 
 async function isValidName(name) {
-    const nameList = await fetchListOfNames();
     return nameList.includes(name);
 }
 

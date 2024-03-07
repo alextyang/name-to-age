@@ -21,7 +21,7 @@ export function renderGraph(inputData) {
     const margin = { top: 40, right: 20, bottom: 40, left: 20 },
         rect = graphEl.getBoundingClientRect(),
         width = rect.width,
-        height = rect.height - 60;
+        height = rect.height - 75;
 
     svg = d3.select("#result")
         .append("svg")

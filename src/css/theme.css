@@ -19,6 +19,12 @@ body {
 
     text-align: center;
 
+    height: 100vh;
+    margin: 0;
+    overflow: hidden;
+
+    display: flex;
+    flex-direction: column;
 }
 
 h1 {
@@ -55,7 +61,7 @@ input {
     margin: 0 auto;
     width: 100%;
     max-width: 24rem;
-    height: 4rem;
+    height: 164px;
 }
 
 #suggestions {
@@ -128,6 +134,27 @@ input {
     max-width: 36rem;
     margin-left: auto;
     margin-right: auto;
-    margin-top: 4rem;
-    margin-bottom: 2rem;
+    padding-top: 4rem;
+    padding-bottom: 2rem;
+}
+
+#age {
+    margin-bottom: 16px;
+}
+
+#result {
+    position: relative;
+    display: inline-block;
+    height: 100%;
+    margin: 0 2.2rem
+}
+
+#result svg {
+    position: absolute;
+    display: inline-block;
+    overflow: visible;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
 }
